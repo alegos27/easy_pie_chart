@@ -53,12 +53,12 @@ class _PieChartPainter extends CustomPainter {
       /// if gap is greater than 0 and current index is not divisible,
       /// it means current pie is a gap arc so it color will be transparent
       drawPieArc(
-          pieValues[index],
-          gap > 0.0 && index % 2 != 0
-              ? Colors.transparent
-              : pies[index ~/ (gap == 0.0 ? 1 : 2)].color,
-          size,
-          canvas);
+        pieValues[index],
+        gap > 0.0 && index % 2 != 0 ? Colors.transparent : pies[index ~/ (gap == 0.0 ? 1 : 2)].color,
+        gap > 0.0 && index % 2 != 0 ? null : pies[index ~/ (gap == 0.0 ? 1 : 2)].gradient,
+        size,
+        canvas,
+      );
 
       /// If showValue is set to true, the pieValue may be displayed. Additionally,
       /// if gap equals 0.0 or if the index is divisible by a 2,
@@ -83,13 +83,13 @@ class _PieChartPainter extends CustomPainter {
     return true;
   }
 
-  void drawPieArc(double pieValue, Color pieColor, Size size, Canvas canvas) {
+  void drawPieArc(double pieValue, Color? pieColor, Gradient? gradient, Size size, Canvas canvas) {
     // Draw the curved border for the partition
     final radius = size.width / 2;
     final rect = Rect.fromCircle(
         center: Offset(size.width / 2, size.height / 2), radius: radius);
     final borderPaint = Paint()
-      ..color = pieColor
+      ..setColorOrGradient(pieColor, gradient, rect)
 
       /// If #pietype is set to PieType.fill,
       /// a filled pie will be drawn;
@@ -151,5 +151,17 @@ class _PieChartPainter extends CustomPainter {
         canvas,
         Offset((size.width / 2) - (textPainter.width / 2),
             size.height / 2 - (textPainter.height / 2)));
+  }
+}
+
+extension PaintExtension on Paint {
+  void setColorOrGradient(Color? color, Gradient? gradient, Rect rect) {
+    if (gradient != null) {
+      this.color = Colors.black;
+      shader = gradient.createShader(rect);
+    } else {
+      this.color = color ?? Colors.transparent;
+      shader = null;
+    }
   }
 }
