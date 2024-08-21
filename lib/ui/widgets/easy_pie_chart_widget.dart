@@ -1,6 +1,6 @@
 part of easy_pie_chart;
 
-class EasyPieChart extends StatelessWidget {
+class EasyPieChart extends StatefulWidget {
   /// Represents a list of [PieData] objects, where each [PieData] holds a value and a color.
   /// The pie chart will be divided into partitions, each corresponding to an item in [children].
   ///
@@ -62,6 +62,10 @@ class EasyPieChart extends StatelessWidget {
   /// If true, animation starts anti-clockwise. Default is false.
   final bool animateFromEnd;
 
+  final Size? badgeSize;
+
+  final Widget Function(BuildContext context, int index)? badgeBuilder;
+
   /// Function triggered when a pie slice is tapped. Provides the index of the pie value.
   final void Function(int index)? onTap;
   const EasyPieChart({
@@ -82,18 +86,28 @@ class EasyPieChart extends StatelessWidget {
     this.pieType = PieType.crust,
     this.onTap,
     this.size = 200,
+    this.badgeSize,
+    this.badgeBuilder,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final List<double> pieValues = getValues(children, gap);
-    final double total =
-        pieValues.reduce(((value, element) => value + element));
+  State<EasyPieChart> createState() => _EasyPieChartState();
+}
 
-    return shouldAnimate
+class _EasyPieChartState extends State<EasyPieChart> {
+  final OverlayPortalController _tooltipController = OverlayPortalController();
+  Offset? _tooltipPosition;
+  int? _tappedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<double> pieValues = getValues(widget.children, widget.gap);
+    final double total = pieValues.reduce(((value, element) => value + element));
+
+    return widget.shouldAnimate
         ? TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.00000000001, end: 1.0),
-            duration: animateDuration ?? const Duration(milliseconds: 1500),
+            duration: widget.animateDuration ?? const Duration(milliseconds: 1500),
             builder: (context, value, _) {
               return pieChartWidget(pieValues, total, value);
             })
@@ -102,39 +116,94 @@ class EasyPieChart extends StatelessWidget {
 
   Widget pieChartWidget(List<double> pieValues, double total, double value) {
     return GestureDetector(
-      onTapUp: onTap == null
+      onTapUp: widget.onTap == null
           ? null
           : (details) {
+              double kX = details.globalPosition.dx - details.localPosition.dx;
+              double kY = details.globalPosition.dy - details.localPosition.dy;
               final int? index = getIndexOfTappedPie(
-                  pieValues,
-                  total,
-                  gap,
-                  getAngleIn360(start),
-                  getAngleFromCordinates(details.localPosition.dx,
-                      details.localPosition.dy, size / 2));
-              if (index == null) return;
-              onTap!(index);
+                  pieValues, total, widget.gap, getAngleIn360(widget.start), getAngleFromCordinates(details.localPosition.dx, details.localPosition.dy, widget.size / 2));
+              if (index != null) {
+                widget.onTap!(index);
+                if (_tappedIndex == index) {
+                  setState(() {
+                    _tappedIndex = null;
+                  });
+                  _tooltipPosition = null;
+                  _tooltipController.hide();
+                } else {
+                  setState(() {
+                    _tappedIndex = index;
+                  });
+                  _tooltipPosition = getArcCenter(widget.start, widget.children.map((pie) => pie.value).toList(), widget.size / 2, index).translate(kX, kY);
+                  _tooltipController.show();
+                }
+              } else {
+                setState(() {
+                  _tappedIndex = null;
+                });
+                _tooltipPosition = null;
+                _tooltipController.hide();
+              }
             },
-      child: SizedBox(
-        height: size,
-        width: size,
-        child: CustomPaint(
-          painter: _PieChartPainter(
-            pies: children,
-            pieValues: pieValues.map((pieValue) => pieValue * value).toList(),
-            total: total,
-            showValue: showValue,
-            startAngle: start,
-            pieType: pieType,
-            animateFromEnd: animateFromEnd,
-            centerText: child != null ? null : centerText,
-            style: style,
-            centerStyle: centerStyle,
-            gap: gap,
-            borderEdge: borderEdge,
-            borderWidth: borderWidth,
+      child: OverlayPortal(
+        controller: _tooltipController,
+        overlayChildBuilder: (context) {
+          if (widget.badgeBuilder != null && _tappedIndex != null) {
+            double left = (_tooltipPosition?.dx ?? 0) - (widget.badgeSize?.width ?? 0) / 2;
+            double top = (_tooltipPosition?.dy ?? 0) - (widget.badgeSize?.height ?? 0) / 2;
+            if (left < 0) {
+              left = 0;
+            }
+            if (left + (widget.badgeSize?.width ?? 0) > MediaQuery.of(context).size.width) {
+              left = MediaQuery.of(context).size.width - (widget.badgeSize?.width ?? 0);
+            }
+            if (top < 0) {
+              top = 0;
+            }
+            if (top + (widget.badgeSize?.height ?? 0) > MediaQuery.of(context).size.height) {
+              top = MediaQuery.of(context).size.height - (widget.badgeSize?.height ?? 0);
+            }
+            return Positioned(
+              left: left,
+              top: top,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _tappedIndex = null;
+                  });
+                  _tooltipPosition = null;
+                  _tooltipController.hide();
+                },
+                child: widget.badgeBuilder!(context, _tappedIndex!),
+              ),
+            );
+          }
+
+          return const SizedBox.shrink();
+        },
+        child: SizedBox(
+          height: widget.size,
+          width: widget.size,
+          child: CustomPaint(
+            painter: _PieChartPainter(
+              pies: widget.children,
+              pieValues: pieValues.map((pieValue) => pieValue * value).toList(),
+              total: total,
+              showValue: widget.showValue,
+              startAngle: widget.start,
+              pieType: widget.pieType,
+              animateFromEnd: widget.animateFromEnd,
+              centerText: widget.child != null ? null : widget.centerText,
+              style: widget.style,
+              centerStyle: widget.centerStyle,
+              gap: widget.gap,
+              borderEdge: widget.borderEdge,
+              borderWidth: widget.borderWidth,
+              tappedIndex: _tappedIndex,
+            ),
+            child: widget.child,
           ),
-          child: child,
         ),
       ),
     );

@@ -16,10 +16,8 @@ List<double> getValues(List<PieData> pies, double gap) {
 }
 
 /// Calculates the angle from given x and y coordinates and the pie chart [size].
-double getAngleFromCordinates(
-    double xCordinate, double yCordinate, double size) {
-  return getPositiveAngle(
-      atan2(yCordinate - size, xCordinate - size) * 180 / pi);
+double getAngleFromCordinates(double xCordinate, double yCordinate, double size) {
+  return getPositiveAngle(atan2(yCordinate - size, xCordinate - size) * 180 / pi);
 }
 
 /// Converts a potentially negative angle to its positive equivalent.
@@ -40,6 +38,19 @@ double getAngleIn360(double startAngle) {
   return startAngle;
 }
 
+/// Calculates the center of the current pie slice.
+Offset getArcCenter(double startAngle, List<double> pieValues, double radius, int index) {
+  double startAngleRadians = startAngle * (pi / 180);
+  for (int i = 0; i < index; i++) {
+    startAngleRadians += 2 * pi * pieValues[i];
+  }
+  double theta = 2 * pi * pieValues[index];
+  double centerAngle = startAngleRadians + theta / 2;
+  double x = radius * cos(centerAngle) + radius;
+  double y = radius * sin(centerAngle) + radius;
+  return Offset(x, y);
+}
+
 /// Checks whether the current pie slice is tapped.
 bool isCurrentPieTap(double startAngle, double sweepAngle, double tapAngle) {
   if (startAngle <= sweepAngle) {
@@ -55,15 +66,12 @@ bool isCurrentPieTap(double startAngle, double sweepAngle, double tapAngle) {
 }
 
 /// Gets the index of the tapped pie slice.
-int? getIndexOfTappedPie(
-    List<double> pieValues, double total, double gap, startAngle, tapAngle) {
+int? getIndexOfTappedPie(List<double> pieValues, double total, double gap, startAngle, tapAngle) {
   for (int i = 0; i < pieValues.length; i++) {
     double pieAngle = (2 * pi * (pieValues[i] / total)) * 180 / pi;
     double j = 0;
     while (j <= (gap > 0.0 ? i % 2 : 0)) {
-      double sweepAngle =
-          (startAngle + (pieAngle * (gap > 0.0 && i % 2 == 1 ? 0.25 : 1))) %
-              360;
+      double sweepAngle = (startAngle + (pieAngle * (gap > 0.0 && i % 2 == 1 ? 0.25 : 1))) % 360;
       if (isCurrentPieTap(startAngle, sweepAngle, tapAngle)) {
         final int index = gap > 0.0
             ? i % 2 == 1

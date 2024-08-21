@@ -65,8 +65,7 @@ class _ExampleState extends State<Example> {
                       borderEdge: StrokeCap.butt,
                       pieType: PieType.crust,
                       onTap: (index) {},
-                      style: const TextStyle(
-                          color: Colors.pinkAccent, fontSize: 10),
+                      style: const TextStyle(color: Colors.pinkAccent, fontSize: 10),
                       gap: 0.02,
                       start: 0,
                       size: 130,
@@ -76,15 +75,31 @@ class _ExampleState extends State<Example> {
                       children: pies,
                       pieType: PieType.crust,
                       onTap: (index) {
-                        tapIndex = index.toString();
-                        setState(() {});
+                        setState(() {
+                          tapIndex = pies[index].value.toString();
+                        });
                       },
                       gap: 0.1,
                       start: 0,
                       animateFromEnd: true,
+                      showValue: false,
                       size: 130,
+                      badgeSize: const Size(70, 70),
+                      badgeBuilder: (context, index) => Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(Icons.flag, color: Colors.black),
+                      ),
                       child: Center(child: Text(tapIndex)),
-                    ),
+                    )
                   ],
                 ),
               ),
@@ -155,7 +170,6 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-        child: Padding(padding: const EdgeInsets.all(20.0), child: child));
+    return Card(child: Padding(padding: const EdgeInsets.all(20.0), child: child));
   }
 }
