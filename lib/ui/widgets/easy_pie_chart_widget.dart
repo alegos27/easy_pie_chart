@@ -69,6 +69,8 @@ class EasyPieChart extends StatefulWidget {
   /// Function triggered when a pie slice is tapped. Provides the index of the pie value.
   final void Function(int? index)? onTap;
 
+  final int? selectedIndex;
+
   const EasyPieChart({
     Key? key,
     required this.children,
@@ -85,10 +87,11 @@ class EasyPieChart extends StatefulWidget {
     this.centerStyle,
     this.animateFromEnd = false,
     this.pieType = PieType.crust,
-    this.onTap,
     this.size = 200,
     this.badgeSize,
     this.badgeBuilder,
+    this.selectedIndex,
+    this.onTap,
   }) : super(key: key);
 
   @override
@@ -99,6 +102,14 @@ class _EasyPieChartState extends State<EasyPieChart> {
   int? _tappedIndex;
   Offset? _badgePosition;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.selectedIndex != null) {
+      _tappedIndex = widget.selectedIndex;
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     final List<double> pieValues = getValues(widget.children, widget.gap);
