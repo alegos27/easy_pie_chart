@@ -109,7 +109,7 @@ class _EasyPieChartState extends State<EasyPieChart> {
       _tappedIndex = widget.selectedIndex;
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final List<double> pieValues = getValues(widget.children, widget.gap);
@@ -126,6 +126,7 @@ class _EasyPieChartState extends State<EasyPieChart> {
   }
 
   Widget pieChartWidget(List<double> pieValues, double total, double value) {
+    _tappedIndex = widget.selectedIndex;
     return GestureDetector(
       onTapUp: widget.onTap == null
           ? null
