@@ -1,6 +1,6 @@
 part of easy_pie_chart;
 
-class EasyPieChart extends StatefulWidget {
+class EasyPieChart extends StatelessWidget {
   /// Represents a list of [PieData] objects, where each [PieData] holds a value and a color.
   /// The pie chart will be divided into partitions, each corresponding to an item in [children].
   ///
@@ -95,109 +95,98 @@ class EasyPieChart extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EasyPieChart> createState() => _EasyPieChartState();
-}
-
-class _EasyPieChartState extends State<EasyPieChart> {
-  Offset? _badgePosition;
-
-  @override
   Widget build(BuildContext context) {
-    final List<double> pieValues = getValues(widget.children, widget.gap);
+    final List<double> pieValues = getValues(children, gap);
     final double total = pieValues.reduce(((value, element) => value + element));
 
-    return widget.shouldAnimate
+    return shouldAnimate
         ? TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.00000000001, end: 1.0),
-            duration: widget.animateDuration ?? const Duration(milliseconds: 1500),
+            duration: animateDuration ?? const Duration(milliseconds: 1500),
             builder: (context, value, _) {
-              return pieChartWidget(pieValues, total, value);
+              return pieChartWidget(pieValues, total, value, context);
             })
-        : pieChartWidget(pieValues, total, 1);
+        : pieChartWidget(pieValues, total, 1, context);
   }
 
-  Widget pieChartWidget(List<double> pieValues, double total, double value) {
+  Widget pieChartWidget(List<double> pieValues, double total, double value, BuildContext context) {
     return GestureDetector(
-      onTapUp: widget.onTap == null
+      onTapUp: onTap == null
           ? null
           : (details) {
-            int? tappedIndex;
+              int? tappedIndex;
               final int? index = getIndexOfTappedPie(
-                  pieValues, total, widget.gap, getAngleIn360(widget.start), getAngleFromCordinates(details.localPosition.dx, details.localPosition.dy, widget.size / 2));
+                  pieValues, total, gap, getAngleIn360(start), getAngleFromCordinates(details.localPosition.dx, details.localPosition.dy, size / 2));
               if (index != null) {
                 if (tappedIndex == index) {
                   tappedIndex = null;
-                    _badgePosition = null;
                 } else {
                   tappedIndex = index;
-                    _badgePosition = widget.badgeSize != null
-                        ? getBadgeStartPoint(
-                            index,
-                            widget.children.map((pie) => pie.value).toList(),
-                            getAngleIn360(widget.start),
-                            widget.size / 2,
-                            widget.badgeSize!,
-                          )
-                        : null;
                 }
               } else {
                 tappedIndex = null;
-                  _badgePosition = null;
               }
-              widget.onTap!(tappedIndex);
+              onTap!(tappedIndex);
             },
       child: SizedBox(
-        height: widget.size,
-        width: widget.size,
+        height: size,
+        width: size,
         child: Stack(
           fit: StackFit.expand,
           children: [
             CustomPaint(
               painter: _PieChartPainter(
-                pies: widget.children,
+                pies: children,
                 pieValues: pieValues.map((pieValue) => pieValue * value).toList(),
                 total: total,
-                showValue: widget.showValue,
-                startAngle: widget.start,
-                pieType: widget.pieType,
-                animateFromEnd: widget.animateFromEnd,
-                centerText: widget.child != null ? null : widget.centerText,
-                style: widget.style,
-                centerStyle: widget.centerStyle,
-                gap: widget.gap,
-                borderEdge: widget.borderEdge,
-                borderWidth: widget.borderWidth,
-                tappedIndex: widget.selectedIndex,
+                showValue: showValue,
+                startAngle: start,
+                pieType: pieType,
+                animateFromEnd: animateFromEnd,
+                centerText: child != null ? null : centerText,
+                style: style,
+                centerStyle: centerStyle,
+                gap: gap,
+                borderEdge: borderEdge,
+                borderWidth: borderWidth,
+                tappedIndex: selectedIndex,
               ),
-              child: widget.child,
+              child: child,
             ),
-            _getBadge()
+            _getBadge(context)
           ],
         ),
       ),
     );
   }
 
-  Widget _getBadge() {
-    if (widget.badgeBuilder != null && widget.selectedIndex != null) {
-      double left = (_badgePosition?.dx ?? 0);
-      double top = (_badgePosition?.dy ?? 0);
+  Widget _getBadge(BuildContext context) {
+    if (badgeBuilder != null && selectedIndex != null) {
+      final badgePosition = getBadgeStartPoint(
+        selectedIndex!,
+        children.map((pie) => pie.value).toList(),
+        getAngleIn360(start),
+        size / 2,
+        badgeSize!,
+      );
+      double left = badgePosition.dx;
+      double top = badgePosition.dy;
       if (left < 0) {
         left = 0;
       }
-      if (left + (widget.badgeSize?.width ?? 0) > widget.size) {
-        left = widget.size - (widget.badgeSize?.width ?? 0);
+      if (left + (badgeSize?.width ?? 0) > size) {
+        left = size - (badgeSize?.width ?? 0);
       }
       if (top < 0) {
         top = 0;
       }
-      if (top + (widget.badgeSize?.height ?? 0) > widget.size) {
-        top = widget.size - (widget.badgeSize?.height ?? 0);
+      if (top + (badgeSize?.height ?? 0) > size) {
+        top = size - (badgeSize?.height ?? 0);
       }
       return Positioned(
         left: left,
         top: top,
-        child: widget.badgeBuilder!(context, widget.selectedIndex!),
+        child: badgeBuilder!(context, selectedIndex!),
       );
     }
     return const SizedBox.shrink();
