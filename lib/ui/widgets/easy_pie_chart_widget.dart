@@ -99,16 +99,7 @@ class EasyPieChart extends StatefulWidget {
 }
 
 class _EasyPieChartState extends State<EasyPieChart> {
-  int? _tappedIndex;
   Offset? _badgePosition;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.selectedIndex != null) {
-      _tappedIndex = widget.selectedIndex;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,22 +117,19 @@ class _EasyPieChartState extends State<EasyPieChart> {
   }
 
   Widget pieChartWidget(List<double> pieValues, double total, double value) {
-    _tappedIndex = widget.selectedIndex;
     return GestureDetector(
       onTapUp: widget.onTap == null
           ? null
           : (details) {
+            int? tappedIndex;
               final int? index = getIndexOfTappedPie(
                   pieValues, total, widget.gap, getAngleIn360(widget.start), getAngleFromCordinates(details.localPosition.dx, details.localPosition.dy, widget.size / 2));
               if (index != null) {
-                if (_tappedIndex == index) {
-                  setState(() {
-                    _tappedIndex = null;
+                if (tappedIndex == index) {
+                  tappedIndex = null;
                     _badgePosition = null;
-                  });
                 } else {
-                  setState(() {
-                    _tappedIndex = index;
+                  tappedIndex = index;
                     _badgePosition = widget.badgeSize != null
                         ? getBadgeStartPoint(
                             index,
@@ -151,15 +139,12 @@ class _EasyPieChartState extends State<EasyPieChart> {
                             widget.badgeSize!,
                           )
                         : null;
-                  });
                 }
               } else {
-                setState(() {
-                  _tappedIndex = null;
+                tappedIndex = null;
                   _badgePosition = null;
-                });
               }
-              widget.onTap!(_tappedIndex);
+              widget.onTap!(tappedIndex);
             },
       child: SizedBox(
         height: widget.size,
@@ -182,7 +167,7 @@ class _EasyPieChartState extends State<EasyPieChart> {
                 gap: widget.gap,
                 borderEdge: widget.borderEdge,
                 borderWidth: widget.borderWidth,
-                tappedIndex: _tappedIndex,
+                tappedIndex: widget.selectedIndex,
               ),
               child: widget.child,
             ),
@@ -194,7 +179,7 @@ class _EasyPieChartState extends State<EasyPieChart> {
   }
 
   Widget _getBadge() {
-    if (widget.badgeBuilder != null && _tappedIndex != null) {
+    if (widget.badgeBuilder != null && widget.selectedIndex != null) {
       double left = (_badgePosition?.dx ?? 0);
       double top = (_badgePosition?.dy ?? 0);
       if (left < 0) {
@@ -212,15 +197,7 @@ class _EasyPieChartState extends State<EasyPieChart> {
       return Positioned(
         left: left,
         top: top,
-        child: GestureDetector(
-          onTap: () {
-            setState(() {
-              _tappedIndex = null;
-              _badgePosition = null;
-            });
-          },
-          child: widget.badgeBuilder!(context, _tappedIndex!),
-        ),
+        child: widget.badgeBuilder!(context, widget.selectedIndex!),
       );
     }
     return const SizedBox.shrink();
