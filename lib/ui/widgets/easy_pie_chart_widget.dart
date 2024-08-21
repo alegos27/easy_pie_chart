@@ -95,9 +95,8 @@ class EasyPieChart extends StatefulWidget {
 }
 
 class _EasyPieChartState extends State<EasyPieChart> {
-  final OverlayPortalController _tooltipController = OverlayPortalController();
-  Offset? _tooltipPosition;
   int? _tappedIndex;
+  Offset? _badgePosition;
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +118,6 @@ class _EasyPieChartState extends State<EasyPieChart> {
       onTapUp: widget.onTap == null
           ? null
           : (details) {
-              double kX = details.globalPosition.dx - details.localPosition.dx;
-              double kY = details.globalPosition.dy - details.localPosition.dy;
               final int? index = getIndexOfTappedPie(
                   pieValues, total, widget.gap, getAngleIn360(widget.start), getAngleFromCordinates(details.localPosition.dx, details.localPosition.dy, widget.size / 2));
               if (index != null) {
@@ -128,84 +125,91 @@ class _EasyPieChartState extends State<EasyPieChart> {
                 if (_tappedIndex == index) {
                   setState(() {
                     _tappedIndex = null;
+                    _badgePosition = null;
                   });
-                  _tooltipPosition = null;
-                  _tooltipController.hide();
                 } else {
                   setState(() {
                     _tappedIndex = index;
+                    _badgePosition = widget.badgeSize != null
+                        ? getBadgeStartPoint(
+                            index,
+                            widget.children.map((pie) => pie.value).toList(),
+                            getAngleIn360(widget.start),
+                            widget.size / 2,
+                            widget.badgeSize!,
+                          )
+                        : null;
                   });
-                  _tooltipPosition = getArcCenter(widget.start, widget.children.map((pie) => pie.value).toList(), widget.size / 2, index).translate(kX, kY);
-                  _tooltipController.show();
                 }
               } else {
                 setState(() {
                   _tappedIndex = null;
+                  _badgePosition = null;
                 });
-                _tooltipPosition = null;
-                _tooltipController.hide();
               }
             },
-      child: OverlayPortal(
-        controller: _tooltipController,
-        overlayChildBuilder: (context) {
-          if (widget.badgeBuilder != null && _tappedIndex != null) {
-            double left = (_tooltipPosition?.dx ?? 0) - (widget.badgeSize?.width ?? 0) / 2;
-            double top = (_tooltipPosition?.dy ?? 0) - (widget.badgeSize?.height ?? 0) / 2;
-            if (left < 0) {
-              left = 0;
-            }
-            if (left + (widget.badgeSize?.width ?? 0) > MediaQuery.of(context).size.width) {
-              left = MediaQuery.of(context).size.width - (widget.badgeSize?.width ?? 0);
-            }
-            if (top < 0) {
-              top = 0;
-            }
-            if (top + (widget.badgeSize?.height ?? 0) > MediaQuery.of(context).size.height) {
-              top = MediaQuery.of(context).size.height - (widget.badgeSize?.height ?? 0);
-            }
-            return Positioned(
-              left: left,
-              top: top,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _tappedIndex = null;
-                  });
-                  _tooltipPosition = null;
-                  _tooltipController.hide();
-                },
-                child: widget.badgeBuilder!(context, _tappedIndex!),
+      child: SizedBox(
+        height: widget.size,
+        width: widget.size,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomPaint(
+              painter: _PieChartPainter(
+                pies: widget.children,
+                pieValues: pieValues.map((pieValue) => pieValue * value).toList(),
+                total: total,
+                showValue: widget.showValue,
+                startAngle: widget.start,
+                pieType: widget.pieType,
+                animateFromEnd: widget.animateFromEnd,
+                centerText: widget.child != null ? null : widget.centerText,
+                style: widget.style,
+                centerStyle: widget.centerStyle,
+                gap: widget.gap,
+                borderEdge: widget.borderEdge,
+                borderWidth: widget.borderWidth,
+                tappedIndex: _tappedIndex,
               ),
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
-        child: SizedBox(
-          height: widget.size,
-          width: widget.size,
-          child: CustomPaint(
-            painter: _PieChartPainter(
-              pies: widget.children,
-              pieValues: pieValues.map((pieValue) => pieValue * value).toList(),
-              total: total,
-              showValue: widget.showValue,
-              startAngle: widget.start,
-              pieType: widget.pieType,
-              animateFromEnd: widget.animateFromEnd,
-              centerText: widget.child != null ? null : widget.centerText,
-              style: widget.style,
-              centerStyle: widget.centerStyle,
-              gap: widget.gap,
-              borderEdge: widget.borderEdge,
-              borderWidth: widget.borderWidth,
-              tappedIndex: _tappedIndex,
+              child: widget.child,
             ),
-            child: widget.child,
-          ),
+            _getBadge()
+          ],
         ),
       ),
     );
+  }
+
+  Widget _getBadge() {
+    if (widget.badgeBuilder != null && _tappedIndex != null) {
+      double left = (_badgePosition?.dx ?? 0);
+      double top = (_badgePosition?.dy ?? 0);
+      if (left < 0) {
+        left = 0;
+      }
+      if (left + (widget.badgeSize?.width ?? 0) > widget.size) {
+        left = widget.size - (widget.badgeSize?.width ?? 0);
+      }
+      if (top < 0) {
+        top = 0;
+      }
+      if (top + (widget.badgeSize?.height ?? 0) > widget.size) {
+        top = widget.size - (widget.badgeSize?.height ?? 0);
+      }
+      return Positioned(
+        left: left,
+        top: top,
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _tappedIndex = null;
+              _badgePosition = null;
+            });
+          },
+          child: widget.badgeBuilder!(context, _tappedIndex!),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }

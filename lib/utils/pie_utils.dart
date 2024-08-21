@@ -39,16 +39,17 @@ double getAngleIn360(double startAngle) {
 }
 
 /// Calculates the center of the current pie slice.
-Offset getArcCenter(double startAngle, List<double> pieValues, double radius, int index) {
+Offset getBadgeStartPoint(int index, List<double> pieValues, double startAngle, double radius, Size badgeSize) {
+  final total = pieValues.reduce((value, element) => value + element);
   double startAngleRadians = startAngle * (pi / 180);
   for (int i = 0; i < index; i++) {
-    startAngleRadians += 2 * pi * pieValues[i];
+    startAngleRadians += 2 * pi * pieValues[i]/total;
   }
-  double theta = 2 * pi * pieValues[index];
+  double theta = 2 * pi * pieValues[index]/total;
   double centerAngle = startAngleRadians + theta / 2;
   double x = radius * cos(centerAngle) + radius;
   double y = radius * sin(centerAngle) + radius;
-  return Offset(x, y);
+  return Offset(x - badgeSize.width / 2, y - badgeSize.height / 2);
 }
 
 /// Checks whether the current pie slice is tapped.
