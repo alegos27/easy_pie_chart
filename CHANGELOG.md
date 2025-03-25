@@ -1,3 +1,4 @@
-## 1.0.0
+## 1.0.2
 
-* Initial release of the Easy Pie Chart package.
+###  Fixed
+*   Corrected the widget name in the documentation from PIeChart to the proper name EasyPIeChart. This update clears up any confusion!
